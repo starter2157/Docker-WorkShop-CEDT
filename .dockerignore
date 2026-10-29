@@ -1,8 +1,8 @@
-# TODO(step-3): list paths that must NOT be copied into the Docker build context.
-# Required entries: node_modules, .git, .env, npm-debug.log, Dockerfile, .github, .dockerignore itself
-#
-# NOTE: .dockerignore only affects `docker build` (what lands in the build context).
-# It does NOT affect `docker compose` bind mounts. Do not add `app/db/` or `*.sql`
-# here, or the image will build without seed data paths being reachable.
-#
-# (Fill in the list below.)
+# Paths that must NOT be copied into the Docker build context (step-3).
+node_modules
+.git
+.env
+npm-debug.log
+Dockerfile
+.github
+.dockerignore

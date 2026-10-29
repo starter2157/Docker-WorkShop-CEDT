@@ -1,45 +1,41 @@
 services:
   web:
-    # TODO(step-5a): build the image from the local Dockerfile and expose port 3000.
-      build: ???
-      ports:
-        - "???:???"
+    # step-5a: build from the local Dockerfile and publish port 3000.
+    build: .
+    ports:
+      - "3000:3000"
 
-    # TODO(step-5b): set the DATABASE_URL env var so the app can reach Postgres.
-      # HINT: you can find this URL in .env.example
-      environment:
-          DATABASE_URL: ???
+    # step-5b: point the app at the `db` service (value from .env.example).
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/workshop
 
-    # TODO(step-5c): make `web` wait until `db` is healthy before starting.
-      ???:
-        ???:
-          condition: service_healthy
+    # step-5c: don't start until Postgres reports healthy.
+    depends_on:
+      db:
+        condition: service_healthy
 
   db:
-    # TODO(step-5d): use postgres:16-alpine and define a healthcheck using pg_isready.
-        image: ???
-        healthcheck:
-          test: ["???", "pg_isready -U postgres -d workshop"]
-          interval: 5s
-          timeout: 3s
-          retries: 10
-          start_period: 20s
+    # step-5d: pinned Postgres with a pg_isready healthcheck.
+    image: postgres:16-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d workshop"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
 
-    # TODO(step-5e): mount the named volume `pgdata` at /var/lib/postgresql/data.
-        volumes:
-          - pgdata:/var/lib/postgresql/data
-    #       there might be something here ?
+    # step-5e: named volume for the data directory.
+    # step-5g: seed script, mounted read-only.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./app/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
-    # TODO(step-5f): set Postgres env vars so the DB and user are created on startup.
-        environment:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: workshop
+    # step-5f: create the DB and user on first startup.
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: workshop
 
-    # TODO(step-5g): bind-mount ./app/db/init.sql into /docker-entrypoint-initdb.d/.
-    #   HINT: add this alongside the pgdata volume from step-5e:
-    #     - ./app/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-
-# TODO(step-5h): declare the named volume `pgdata` at the top level.
+# step-5h: named volume declaration.
 volumes:
-  ???:
+  pgdata:

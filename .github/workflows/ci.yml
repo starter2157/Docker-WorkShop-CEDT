@@ -1,14 +1,12 @@
 name: CI
 
-# TODO(step-6a): trigger the workflow on push targeting the `main` branch.
+# step-6a: run on every push to main.
 on:
-    push:
-        branches: [???]
+  push:
+    branches: [main]
 
 env:
   IMAGE_NAME: workshop-app
-  # After step-6d, your Docker Hub username will live in a secret.
-  # For local tagging below we reference ${{ secrets.DOCKERHUB_USERNAME }}.
 
 jobs:
   build-scan-push:
@@ -20,19 +18,21 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # TODO(step-6b): build the image locally with tag $IMAGE_NAME:${{ github.sha }}.
+      # step-6b: build locally. --load puts the image in the daemon's store so
+      # Trivy can resolve image-ref in the next step (buildx would otherwise
+      # leave it in the build cache only).
       - name: Build image
-        run: ???
+        run: docker build --load -t $IMAGE_NAME:${{ github.sha }} .
 
       # scan the freshly built image with Trivy. Fail the job on CRITICAL.
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@0.35.0
         with:
-            scan-type: image
-            image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
-            severity: CRITICAL
-            exit-code: '1'
-            ignore-unfixed: true
+          scan-type: image
+          image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          severity: CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
 
       # log in to Docker Hub using DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets.
       - name: Log in to Docker Hub
@@ -41,11 +41,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # TODO(step-6e): tag and push the image as both :latest and :${{ github.sha }}.
+      # step-6e: push both :latest and the immutable :<sha> tag.
       - name: Tag and push
-      run: |
+        run: |
           FULL=${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME
-          docker ??? $IMAGE_NAME:${{ github.sha }} $FULL:${{ github.sha }}
-          docker ??? $IMAGE_NAME:${{ github.sha }} $FULL:latest
-          docker ??? $FULL:${{ github.sha }}
-          docker ??? $FULL:latest
+          docker tag $IMAGE_NAME:${{ github.sha }} $FULL:${{ github.sha }}
+          docker tag $IMAGE_NAME:${{ github.sha }} $FULL:latest
+          docker push $FULL:${{ github.sha }}
+          docker push $FULL:latest
